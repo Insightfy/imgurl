@@ -41,6 +41,9 @@ layui.use(['upload','form','element','layer','flow'], function(){
                 //this.url = '/upload/' + storage;
                 //console.log(this.url);
             }
+            ,accept:'file'
+            ,acceptMime:'image/webp,image/jpeg,image/pjpeg,image/bmp,image/png,image/x-png,image/gif'
+            ,exts: 'jpg|jpeg|png|gif|bmp|webp'
             ,size:5120
             ,before: function(obj){ //obj参数包含的信息，跟 choose回调完全一致，可参见上文。
                 layer.load(); //上传loading
@@ -80,6 +83,9 @@ layui.use(['upload','form','element','layer','flow'], function(){
         upload.render({
             elem: '#multiple'
             ,url: '/upload/localhost'
+            ,accept:'file'
+            ,acceptMime:'image/webp,image/jpeg,image/pjpeg,image/bmp,image/png,image/x-png,image/gif'
+            ,exts: 'jpg|jpeg|png|gif|bmp|webp'
             ,multiple:true
             ,size:5120
             ,number:5     //可同时上传数量
@@ -230,4 +236,34 @@ function resetpass(){
             layer.msg(re.msg);
         });
     }
+}
+//删除单张图片
+function del_img(id,imgid,path,thumbnail_path){
+	layer.confirm('确认删除这张图片？', {icon: 3, title:'温馨提示！'}, function(index){
+        $.post("/set/del_img",{imgid:imgid,path:path,thumbnail_path:thumbnail_path},function(data,status){
+			var re = JSON.parse(data);
+            if(re.code == 200) {
+                $("#img"+id).remove();
+                console.log("#img"+id);
+            }
+            else{
+                layer.msg(data);
+            }
+        });
+    
+    layer.close(index);
+    });
+}
+/**
+ * 创建并下载文件
+ * @param  {String} fileName 文件名
+ * @param  {String} content  文件内容
+ */
+function createAndDownloadFile(fileName, content) {
+    var aTag = document.createElement('a');
+    var blob = new Blob([content]);
+    aTag.download = fileName;
+    aTag.href = URL.createObjectURL(blob);
+    aTag.click();
+    URL.revokeObjectURL(blob);
 }

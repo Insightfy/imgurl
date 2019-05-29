@@ -4,6 +4,9 @@
     author:xiaoz.me
     QQ:337003006
     */
+
+    //允许跨域请求
+    header("Access-Control-Allow-Origin: *");
     defined('BASEPATH') OR exit('No direct script access allowed');
 
     class Upload extends CI_Controller{
@@ -61,14 +64,15 @@
             }
             // var_dump();
             $config['upload_path']      = $upload_path;
-            $config['allowed_types']    = 'gif|jpg|png|bmp|webp';
+            $config['allowed_types']    = 'gif|jpg|jpeg|png|bmp|webp';
+            //$config['allowed_types']    = 'image/jpeg|image/png|image/gif|image/bmp|image/x-ms-bmp|image/webp';
             $config['max_size']     = 5120;
             $config['file_ext_tolower'] = TRUE; //文件名转换为小写
             $config['overwrite'] = TRUE;        //覆盖同名文件
             $config['encrypt_name']    = TRUE;         //随机命名图片
             return $config;
         }
-        public function localhost(){
+        public function localhost($type = 'json'){
             //加载上传的配置选项
             $config = $this->config();
             //加载上传类
@@ -114,7 +118,22 @@
                 
                 //生成缩略图
                 $this->load->library('image');
-                $this->image->thumbnail($full_path,290,175); 
+                if(!$this->image->thumbnail($full_path,290,175)){
+                    //像素太小就不生产缩略图
+                    $thumbnail_url = $domain.$relative_path;
+                }
+
+                //CI获取获取.bmp 图片的像素，认为.bmp不是图像类型，改用其它方法获取像素
+                if( $data['file_type'] === 'image/x-ms-bmp' ){
+                    $tmpinfo = getimagesize($full_path);
+                    $data['image_width'] = $tmpinfo[0];
+                    $data['image_height'] = $tmpinfo[1];
+                }
+                //webp的图片暂时无法获取宽高，则设置为0
+                if($data['file_type'] === 'image/webp'){
+                    $data['image_width'] = 0;
+                    $data['image_height'] = 0;
+                }
                 
                 //查询图片是否上传过
                 if($imginfo = $this->query->repeat($imgid)){
@@ -130,7 +149,9 @@
                         "width"             =>  $data['image_width'],
                         "height"            =>  $data['image_height']
                     );
-                    $this->succeed_msg($info);
+                    //$this->succeed_msg($info);
+                    //根据不同的类型返回不同的数据
+                    $this->re_data($type,$info);
                 }
                 //图片没有上传过
                 else{
@@ -170,10 +191,33 @@
                         "width"             =>  $data['image_width'],
                         "height"            =>  $data['image_height']
                     );
+                    //根据不同的类型返回不同的数据
+                    $this->re_data($type,$info);
                 }
-                //var_dump($info);
-                //exit;
-                $this->succeed_msg($info);
+            }
+        }
+        //根据不同的类型返回不同的数据
+        protected function re_data($type,$info){
+            $url = $info['url'];
+            switch ($type) {
+                case 'json':
+                    $this->succeed_msg($info);
+                    break;
+                case 'url':
+                    echo $url;
+                    break;
+                case 'html':
+                    echo "<img src = '$url' />";
+                    break;
+                case 'markdown':
+                    echo "![]($url)";
+                    break;
+                case 'bbcode':
+                    echo "[img]".$url."[/img]";
+                    break;
+                default:
+                    $this->succeed_msg($info);
+                    break;
             }
         }
         //上传成功返回json

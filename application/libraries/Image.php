@@ -20,6 +20,8 @@
             $img_w = $imginfo[0];
             //图片高
             $img_h = $imginfo[1];
+            //图片MIME类型
+            $mime = $imginfo['mime'];
             //获取源文件名
             $filename = end($imgarr);
             $imgname = explode(".",$filename);
@@ -33,8 +35,12 @@
             // 创建缩略图
             //原图宽高大于缩略图
             if(($img_w > $width) || ($img_h > $height)){
+                //如果是WEBP/SVG则不裁剪
+                if(($mime === 'image/webp') OR ($mime === 'image/svg+xml')){
+                    return FALSE;
+                }
                 //检测是否支持ImageMagick
-                if($this->check()){
+                elseif($this->check()){
                     //使用ImageMagick裁剪图像
                     $image = new Imagick($source);
                     $image->cropThumbnailImage( $width, $height );
@@ -42,6 +48,7 @@
                     $image->writeImage( $thumbnail_full );
                     //清理工作
                     $image->clear();
+                    return TRUE;
                 }
                 //不支持ImageMagick，使用GD2进行裁剪
                 else{
@@ -54,13 +61,13 @@
                     $config['height']   = $height;
                     $this->CI->load->library('image_lib', $config);
                     $this->CI->image_lib->resize();
-                }
-                
+                    return TRUE;
+                }  
             }
-            
-            
-            
-            
+            //图片像素太小了，不创建缩略图
+            else{
+                return FALSE;
+            }  
         }
         //检测是否支持ImageMagick
         protected function check(){

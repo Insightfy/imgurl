@@ -31,14 +31,14 @@
     //创建token
     function token($user,$pass){
         //token生成算法为：用户名 + md5后的密码 + ip + ua
-        $token = $user.$pass.get_ip().get_ua();
+        $token = $user.$pass.get_ua();
         $token = md5($token);
         
         return $token;
     }
     //判断用户是否登录
     function is_login($user,$pass){
-        $token = $user.$pass.get_ip().get_ua();
+        $token = $user.$pass.get_ua();
         $token = md5($token);
 
         $username = $_COOKIE['user'];
@@ -62,7 +62,9 @@
             case 'image/png':
             case 'image/jpeg':
             case 'image/bmp':
+            case 'image/x-ms-bmp':
             case 'image/webp':
+            case 'image/svg+xml':
                 return TRUE;
                 break;		
             default:
@@ -84,7 +86,7 @@
             case 'image/jpeg':
                 return '.jpg';
                 break;
-            case 'image/bmp':
+            case 'image/x-ms-bmp':
                 return '.bmp';
                 break;
             case 'image/webp':
